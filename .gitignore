@@ -17,3 +17,6 @@ __pycache__/
 *.jks
 *.keystore
 release.keystore.b64
+.ks_pass
+.key_pass
+.ks_alias

@@ -14,11 +14,24 @@ android {
         versionCode = 1
         versionName = "0.1.0-mvp"
     }
+    signingConfigs {
+        create("release") {
+            val ksPath = System.getenv("KEYSTORE_PATH") ?: "release.keystore"
+            storeFile = file(ksPath)
+            storePassword = System.getenv("KEYSTORE_PASSWORD")
+            keyAlias = System.getenv("KEY_ALIAS")
+            keyPassword = System.getenv("KEY_PASSWORD")
+        }
+    }
     buildTypes {
         getByName("debug") { isMinifyEnabled = false }
         getByName("release") {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("debug")
+            // CI rilis menyediakan KEYSTORE_PATH + secrets; lokal fallback ke debug agar build tak gagal
+            signingConfig = if (System.getenv("KEYSTORE_PASSWORD") != null)
+                signingConfigs.getByName("release")
+            else
+                signingConfigs.getByName("debug")
         }
     }
     buildFeatures { compose = true }
