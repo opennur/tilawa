@@ -1,0 +1,19 @@
+# Gradle / Android
+.gradle/
+build/
+app/build/
+local.properties
+*.iml
+.DS_Store
+# Audio besar & model (diunduh first-launch, bukan git)
+tmp/audio/
+*.wav
+*.onnx
+# Python
+__pycache__/
+*.pyc
+.venv/
+# Keystore rilis — JANGAN commit; pakai GitHub Secrets
+*.jks
+*.keystore
+release.keystore.b64
