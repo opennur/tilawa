@@ -11,8 +11,8 @@ android {
         applicationId = "com.tahsinultimate"
         minSdk = 26
         targetSdk = 34
-        versionCode = 2
-        versionName = "0.2.0-mvp"
+        versionCode = 3
+        versionName = "0.2.1-mvp"
     }
     signingConfigs {
         create("release") {

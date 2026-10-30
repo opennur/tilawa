@@ -32,8 +32,11 @@ fun HomeScreen(nav: NavController, vm: AppViewModel = viewModel()) {
                 OutlinedButton(onClick = { nav.navigate("about") }) { Text("Tentang") }
             }
             Spacer(Modifier.height(8.dp))
-            Text("Model Tilawa: " + if (vm.modelManager.isModelReady()) "siap ✓" else "belum diunduh",
-                style = MaterialTheme.typography.bodySmall)
+            Text("Model Tilawa: " + when {
+                vm.modelManager.isDecodeReady() -> "siap penuh ✓ (decode fonem aktif)"
+                vm.modelManager.isModelReady() -> "siap dasar ✓ (tabel token menyusul)"
+                else -> "belum diunduh"
+            }, style = MaterialTheme.typography.bodySmall)
         }
         items(vm.surahs.size) { si ->
             val s = vm.surahs[si]
@@ -96,14 +99,17 @@ fun RecordScreen(nav: NavController, vm: AppViewModel = viewModel()) {
                     if (surah != null && vm.ayahIdx < surah.ayahs.size - 1) { vm.ayahIdx++; vm.analysis = null; vm.lastWav = null }
                 }, enabled = surah != null && vm.ayahIdx < surah.ayahs.size - 1) { Text("›") }
             }
-            if (!vm.modelManager.isModelReady()) {
+            if (!vm.modelManager.isDecodeReady()) {
                 AssistChip(onClick = { vm.downloadModel() }, label = {
                     Text(if (st is DownloadState.Running) "Mengunduh ${st.file}…" else "Unduh model (66 MB)")
                 })
                 if (st is DownloadState.Running) LinearProgressIndicator(
                     progress = { (st.done.toFloat() / st.total.coerceAtLeast(1)).coerceIn(0f, 1f) },
                     modifier = Modifier.fillMaxWidth())
-                Text("Mode heuristik aktif — analisis akustik tetap jalan; dekode fonem penuh perlu model.",
+                Text(
+                    if (vm.modelManager.isModelReady())
+                        "Model dasar ada; tabel token menyusul — analisis akustik tetap jalan."
+                    else "Mode heuristik aktif — analisis akustik tetap jalan; dekode fonem penuh perlu model.",
                     style = MaterialTheme.typography.bodySmall)
             }
         }

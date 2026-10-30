@@ -20,7 +20,10 @@ object TilawaFiles {
     )
     val TOKENS = ModelFile(
         "tokens.txt",
-        "https://huggingface.co/Quran-Lab/zipformer_p-arabic-v3/resolve/main/tokens.txt",
+        // Mirror di repo sendiri: upstream HF (Quran-Lab/zipformer_p-arabic-v3) gated
+        // sehingga unduhan anonim selalu HTTP 401. Isi = tabel Tilawa @tilawa/core
+        // 0.4.0 (251 token, blank 250), NPL-1.2 — lihat model-assets/ATTRIBUTION.md.
+        "https://raw.githubusercontent.com/opennur/tilawa/main/model-assets/tokens.txt",
         1_000,
     )
     val CORPUS = ModelFile(
@@ -52,23 +55,40 @@ class ModelManager(ctx: Context) {
         return file.exists() && file.length() >= f.minBytes
     }
 
-    fun isModelReady(): Boolean = isValid(TilawaFiles.ONNX) && isValid(TilawaFiles.TOKENS)
+    fun isModelReady(): Boolean = isValid(TilawaFiles.ONNX)
+
+    /** Dekode fonem penuh butuh onnx + tabel token. */
+    fun isDecodeReady(): Boolean = isValid(TilawaFiles.ONNX) && isValid(TilawaFiles.TOKENS)
 
     fun modelDir(): File = dir
 
     suspend fun downloadAll() = withContext(Dispatchers.IO) {
-        try {
-            var totalDone = 0L
-            for (f in TilawaFiles.ALL) {
-                if (isValid(f)) continue
-                downloadOne(f) { done, total ->
-                    _state.value = DownloadState.Running(f.name, done, total)
+        val failures = mutableListOf<String>()
+        for (f in TilawaFiles.ALL) {
+            if (isValid(f)) continue
+            var lastErr = ""
+            for (attempt in 1..3) {
+                try {
+                    downloadOne(f) { done, total ->
+                        _state.value = DownloadState.Running("${f.name} (upaya $attempt)", done, total)
+                    }
+                    lastErr = ""
+                    break
+                } catch (e: Exception) {
+                    lastErr = "${f.name}: ${e.message}"
+                    Thread.sleep(1000L * attempt)
                 }
-                totalDone += File(dir, f.name).length()
             }
-            _state.value = DownloadState.Done(totalDone)
-        } catch (e: Exception) {
-            _state.value = DownloadState.Failed(e.message ?: "unduh gagal")
+            if (lastErr.isNotEmpty()) failures += lastErr
+        }
+        val totalDone = TilawaFiles.ALL.sumOf { File(dir, it.name).let { f -> if (f.exists()) f.length() else 0 } }
+        _state.value = if (isValid(TilawaFiles.ONNX) && failures.isEmpty()) {
+            DownloadState.Done(totalDone)
+        } else if (isValid(TilawaFiles.ONNX)) {
+            // onnx inti ada → analisis heuristik bisa jalan; laporkan file pendamping yang gagal
+            DownloadState.Failed("Model dasar siap, tetapi: ${failures.joinToString("; ")}")
+        } else {
+            DownloadState.Failed(failures.joinToString("; ").ifEmpty { "unduh gagal" })
         }
     }
 
@@ -78,8 +98,12 @@ class ModelManager(ctx: Context) {
         (url.openConnection() as HttpURLConnection).run {
             connectTimeout = 30_000; readTimeout = 60_000
             instanceFollowRedirects = true
+            setRequestProperty("User-Agent", "TahsinUltimate/1.0 (Android; +https://github.com/opennur/tilawa)")
             connect()
-            if (responseCode !in 200..299) throw IllegalStateException("HTTP $responseCode untuk ${f.name}")
+            if (responseCode !in 200..299) {
+                val body = try { errorStream?.bufferedReader()?.readText()?.take(200) } catch (_: Exception) { null }
+                throw IllegalStateException("HTTP $responseCode untuk ${f.name}${body?.let { " — $it" } ?: ""}")
+            }
             val total = contentLengthLong.takeIf { it > 0 } ?: f.minBytes
             inputStream.use { inp ->
                 FileOutputStream(tmp).use { out ->

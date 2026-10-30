@@ -18,8 +18,10 @@ class TilawaAsrEngine(private val modelDir: File) {
 
     fun isModelReady(): Boolean =
         File(modelDir, TilawaFiles.ONNX.name).exists() &&
-            File(modelDir, TilawaFiles.ONNX.name).length() >= TilawaFiles.ONNX.minBytes &&
-            File(modelDir, TilawaFiles.TOKENS.name).exists()
+            File(modelDir, TilawaFiles.ONNX.name).length() >= TilawaFiles.ONNX.minBytes
+
+    fun isDecodeReady(): Boolean = isModelReady() &&
+        File(modelDir, TilawaFiles.TOKENS.name).exists()
 
     fun modelFilesStatus(): String {
         val parts = TilawaFiles.ALL.map { f ->
