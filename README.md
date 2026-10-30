@@ -1,7 +1,7 @@
 # Tahsin Ultimate — Deteksi Tajwid 100% On-Device (MVP)
 
 [![Android CI](https://github.com/opennur/tilawa/actions/workflows/android.yml/badge.svg)](https://github.com/opennur/tilawa/actions/workflows/android.yml)
-**APK debug & rilis signed dibangun di CI.** Unduh versi terbaru: https://github.com/opennur/tilawa/releases/tag/v0.2.0-mvp (`app-release.apk`, signed, ~80 MB). Model Tilawa 66 MB diunduh saat first-launch (tidak dibundel).
+**APK debug & rilis signed dibangun di CI.** Unduh versi terbaru: https://github.com/opennur/tilawa/releases/tag/v0.2.1-mvp (`app-release.apk`, signed, ~80 MB). Model Tilawa 66 MB diunduh saat first-launch (tidak dibundel).
 
 Alur pakai: Beranda → pilih surat → Rekam ayat → Analisis → Hasil (skor + kata berwarna + penjelasan per kesalahan) → Mushaf (tap kata untuk hukum tajwid) → Tentang (lisensi + kelola model).
 
