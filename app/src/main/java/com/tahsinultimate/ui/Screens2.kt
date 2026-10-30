@@ -38,11 +38,24 @@ fun ResultScreen(nav: NavController, vm: AppViewModel = viewModel()) {
     }
     LazyColumn(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         item {
-            Text("Skor: ${a.score.total}", style = MaterialTheme.typography.headlineLarge)
+            Text(a.score.total.toString() + " / 100", style = MaterialTheme.typography.headlineLarge)
             Text(a.note, style = MaterialTheme.typography.bodySmall)
             if (a.usedHeuristicAlignment)
                 Text("Alignment kata proporsional (bukan forced-alignment fonem).",
                     style = MaterialTheme.typography.bodySmall)
+        }
+        item {
+            var showDetail by remember { mutableStateOf(false) }
+            TextButton(onClick = { showDetail = !showDetail }) {
+                Text(if (showDetail) "Sembunyikan detail pengukuran" else "Lihat detail pengukuran per kata")
+            }
+            if (showDetail) {
+                Card {
+                    Column(Modifier.padding(10.dp)) {
+                        a.debugLines.forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
+                    }
+                }
+            }
         }
         item {
             FlowRowWords(a)
