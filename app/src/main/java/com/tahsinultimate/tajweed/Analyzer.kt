@@ -3,6 +3,7 @@ package com.tahsinultimate.tajweed
 import com.tahsinultimate.audio.AudioFeatures
 import com.tahsinultimate.data.QuranRepo
 import com.tahsinultimate.data.TajwidRule
+import com.tahsinultimate.ui.FinalScore
 import com.tahsinultimate.ui.Scoring
 
 /**
