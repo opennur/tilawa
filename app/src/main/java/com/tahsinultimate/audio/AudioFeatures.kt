@@ -67,6 +67,18 @@ object AudioFeatures {
             zc.toFloat() / s.size, lowRatio(s), tail, voicedFrames)
     }
 
+    /** true jika tak ada ucapan: puncak terlalu kecil ATAU amplop datar (derau saja). */
+    fun isSilent(s: FloatArray, sr: Int = 16000): Boolean {
+        if (s.isEmpty()) return true
+        val env = frameRms(s, sr, 32)
+        val peak = env.maxOrNull() ?: 0f
+        if (peak < 0.008f) return true // di bawah -42 dBFS: bukan suara manusia
+        val sorted = env.sorted()
+        val med = if (sorted.size % 2 == 1) sorted[sorted.size / 2]
+            else (sorted[sorted.size / 2 - 1] + sorted[sorted.size / 2]) / 2f
+        // Ucapan punya semburan (puncak >> median); derau mic datar.
+        return peak / (med + 1e-9f) < 2.0f
+    }
     /** Bagi sampel ke segmen kata proporsional panjang huruf (ayat tunggal → alignment kasar yang jujur). */
     fun splitProportional(s: FloatArray, sr: Int, weights: List<Float>): List<Seg> {
         val total = weights.sum().coerceAtLeast(1e-9f)

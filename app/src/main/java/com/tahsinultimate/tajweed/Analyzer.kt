@@ -39,11 +39,24 @@ object Analyzer {
     private fun maddChars(w: String): Int = w.count { it == 'ا' || it == 'و' || it == 'ي' || it == 'آ' || it == 'ى' }
 
     fun analyze(words: List<String>, samples: FloatArray, sr: Int = 16000): Result {
+        // Rekaman tidak valid → skor NOL eksplisit (bukan 100 dari daftar kosong).
+        fun invalid(reason: String): Result {
+            val errs = words.map { w ->
+                TajweedError("REKAMAN", w, 0, 0, "$reason Kata '$w' tidak bisa dinilai.", 1f)
+            }
+            val byWord = words.associateWith { listOf("$reason Tidak ada penilaian untuk kata ini.") }
+            return Result(errs, Scoring.score(words, byWord), true, reason)
+        }
         if (samples.size < sr / 5) {
-            return Result(emptyList(), Scoring.score(words, emptyMap()), true,
-                "Audio terlalu pendek (<0,2 dtk). Rekam minimal 1–2 detik.")
+            return invalid("Audio terlalu pendek (<0,2 dtk). Rekam minimal 1–2 detik dengan suara jelas.")
+        }
+        if (AudioFeatures.isSilent(samples, sr)) {
+            return invalid("Tidak ada suara terdeteksi — hanya hening/derau. Periksa mikrofon, dekatkan HP, dan baca ayat dengan suara jelas.")
         }
         val trimmed = AudioFeatures.trimSilence(samples, sr)
+        if (trimmed.size < sr / 2 || AudioFeatures.isSilent(trimmed, sr)) {
+            return invalid("Setelah dipangkas, tersisa ${"%.1f".format(trimmed.size.toFloat() / sr)} dtk suara valid. Baca seluruh ayat dengan suara jelas.")
+        }
         val weights = words.map { it.length.toFloat().coerceAtLeast(1f) }
         val segs = AudioFeatures.splitProportional(trimmed, sr, weights)
         val peak = segs.maxOfOrNull { it.rms } ?: 0f
