@@ -10,6 +10,8 @@ class AudioRecorder(private val outFile: File) {
     private var rec: AudioRecord? = null
     private var thread: Thread? = null
     @Volatile private var running = false
+    /** Level suara 0..1 untuk meteran UI (diperbarui tiap blok baca). */
+    @Volatile var level01: Float = 0f
 
     fun start() {
         val minBuf = AudioRecord.getMinBufferSize(16000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
@@ -25,6 +27,9 @@ class AudioRecorder(private val outFile: File) {
                 while (running) {
                     val n = rec?.read(buf, 0, buf.size) ?: -1
                     if (n > 0) {
+                        var peak = 0
+                        for (i in 0 until n) peak = maxOf(peak, kotlin.math.abs(buf[i].toInt()))
+                        level01 = (peak / 32768f).coerceIn(0f, 1f)
                         val bytes = ByteArray(n * 2)
                         for (i in 0 until n) {
                             bytes[i * 2] = (buf[i].toInt() and 0xFF).toByte()

@@ -29,6 +29,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     var surahIdx by mutableStateOf(0)
     var ayahIdx by mutableStateOf(0)
     var isRecording by mutableStateOf(false)
+    var recStartMs by mutableStateOf(0L)
     var lastWav: File? by mutableStateOf(null)
     var analysis: Analyzer.Result? by mutableStateOf(null)
     var busy by mutableStateOf(false)
@@ -44,11 +45,19 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         recorder = AudioRecorder(out)
         try {
             recorder?.start()
+            recStartMs = System.currentTimeMillis()
             isRecording = true
-            message = "Merekam…"
+            message = "Merekam… ketuk tombol untuk berhenti."
         } catch (e: SecurityException) {
             message = "Izin mikrofon ditolak. Aktifkan di Pengaturan."
         }
+    }
+
+    fun level(): Float = recorder?.level01 ?: 0f
+
+    fun stopAndAnalyze() {
+        stopRecording()
+        analyze()
     }
 
     fun stopRecording() {
